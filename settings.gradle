@@ -1,0 +1,3 @@
+include ':helperapplication'
+include ':app'
+rootProject.name = "HelperApplication"
