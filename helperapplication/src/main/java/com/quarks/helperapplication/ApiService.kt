@@ -1,18 +1,21 @@
 package com.quarks.helperapplication
 import SharedPreferences
 import android.app.IntentService
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.*
 import android.util.Log
+import com.quarks.helperapplication.ApiService.Companion.INTENT_EXTRA_CATEGORY
+import com.quarks.helperapplication.ApiService.Companion.INTENT_EXTRA_CLASSNAME
+import com.quarks.helperapplication.ApiService.Companion.INTENT_EXTRA_FILE
+import com.quarks.helperapplication.ApiService.Companion.INTENT_EXTRA_FILENAME
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import org.apache.commons.io.IOUtils
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
-import java.io.InputStream
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import java.text.DecimalFormat
@@ -40,7 +43,6 @@ class ApiService : IntentService(ApiService::class.java.name) {
         private val JSON = "application/json; charset=utf-8".toMediaTypeOrNull()
         private val PDF = "application/pdf".toMediaTypeOrNull()
         private val IMAGE = "image".toMediaTypeOrNull()
-        private val TAG = "ApiService"
 
         /**
          * Create request with the route and the json object to send
@@ -67,7 +69,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
             if (SharedPreferences.hasWorkspace(context)) {
                 val url = SharedPreferences.getWorkspaceUrl(context) + route
                 requestBuilder.url(url)
-                Log.i(TAG, "$url > $requestBody")
+                Log.e(TAG, "$url > $requestBody")
             }
             if (SharedPreferences.hasToken(context)) {
                 val token = SharedPreferences.getToken(context)
@@ -80,7 +82,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
                     JSONObject("{}")
                 }
                 body.put("context", createContextData(context))
-                Log.i(TAG, body.toString())
+                Log.e(TAG, body.toString())
                 if (fileToSend != null) {
                     requestBuilder = getBuilderForSendFile(
                         requestBuilder,
@@ -94,7 +96,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                Log.i(TAG, "create Request")
+                Log.e(TAG, "create Request")
             }
             return requestBuilder.build()
         }
@@ -182,7 +184,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
 
             } catch (e: Exception) {
                 e.printStackTrace()
-                Log.i(TAG, "create context data")
+                Log.e(TAG, "create context data")
             }
             return contextData
         }
@@ -273,7 +275,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
                 INTENT_EXTRA_CATEGORY
             ))
         try {
-            Log.i(TAG, "send on api service")
+            Log.e(TAG, "send on api service")
             val request = createRequest(
                 this@ApiService,
                 intent.getStringExtra("url"),
@@ -286,7 +288,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
             val client = getCertificateOkHttpClient().build()
             client.newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
-                    Log.i(TAG, e.message)
+                    Log.e(TAG, e.message)
                     bundle.apply {
                         putString(INTENT_EXTRA_CATEGORY, intent.getStringExtra(INTENT_EXTRA_CATEGORY))
                         putString(INTENT_EXTRA_FILENAME, intent.getStringExtra(INTENT_EXTRA_FILENAME))
@@ -316,7 +318,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
                             receiver!!.send(REQUEST_ERROR, bundle)
                         }
                     } catch (e: Exception) {
-                        Log.i(TAG, e.message!!)
+                        Log.e(TAG, e.message!!)
                         e.printStackTrace()
                         bundle.apply {
                             putString(
