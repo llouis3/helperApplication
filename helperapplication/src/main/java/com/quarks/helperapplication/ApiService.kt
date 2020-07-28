@@ -1,5 +1,5 @@
 package com.quarks.helperapplication
-import SharedPreferences
+
 import android.app.IntentService
 import android.content.ContentValues.TAG
 import android.content.Context
@@ -7,10 +7,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.*
 import android.util.Log
-import com.quarks.helperapplication.ApiService.Companion.INTENT_EXTRA_CATEGORY
-import com.quarks.helperapplication.ApiService.Companion.INTENT_EXTRA_CLASSNAME
-import com.quarks.helperapplication.ApiService.Companion.INTENT_EXTRA_FILE
-import com.quarks.helperapplication.ApiService.Companion.INTENT_EXTRA_FILENAME
+import android.util.Log.*
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import org.json.JSONObject
@@ -21,10 +18,6 @@ import java.security.cert.X509Certificate
 import java.text.DecimalFormat
 import javax.net.ssl.*
 
-val applicationId: String? = null
-val versionCode: String? = null
-val versionName: String? = null
-
 /**
  * Class for call web api with json object
  * @property INTENT_EXTRA_CATEGORY name of extra intent for category file
@@ -34,6 +27,9 @@ val versionName: String? = null
  */
 class ApiService : IntentService(ApiService::class.java.name) {
     companion object {
+        private lateinit var applicationId: String
+        private lateinit var versionCode: String
+        private lateinit var versionName: String
         const val INTENT_EXTRA_CATEGORY = "category"
         const val INTENT_EXTRA_CLASSNAME = "className"
         const val INTENT_EXTRA_FILENAME = "fileName"
@@ -43,6 +39,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
         private val JSON = "application/json; charset=utf-8".toMediaTypeOrNull()
         private val PDF = "application/pdf".toMediaTypeOrNull()
         private val IMAGE = "image".toMediaTypeOrNull()
+
 
         /**
          * Create request with the route and the json object to send
@@ -56,6 +53,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
          *
          * @return the created request
          */
+
         fun createRequest(
             context: Context,
             route: String,
@@ -69,7 +67,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
             if (SharedPreferences.hasWorkspace(context)) {
                 val url = SharedPreferences.getWorkspaceUrl(context) + route
                 requestBuilder.url(url)
-                Log.e(TAG, "$url > $requestBody")
+                e(TAG, "$url > $requestBody")
             }
             if (SharedPreferences.hasToken(context)) {
                 val token = SharedPreferences.getToken(context)
@@ -82,7 +80,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
                     JSONObject("{}")
                 }
                 body.put("context", createContextData(context))
-                Log.e(TAG, body.toString())
+                e(TAG, body.toString())
                 if (fileToSend != null) {
                     requestBuilder = getBuilderForSendFile(
                         requestBuilder,
@@ -96,7 +94,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                Log.e(TAG, "create Request")
+                e(TAG, "create Request")
             }
             return requestBuilder.build()
         }
@@ -184,9 +182,15 @@ class ApiService : IntentService(ApiService::class.java.name) {
 
             } catch (e: Exception) {
                 e.printStackTrace()
-                Log.e(TAG, "create context data")
+                e(TAG, "create context data")
             }
             return contextData
+        }
+
+        fun init(applicationId: String, versionName: String, versionCode: String) {
+            this.applicationId = applicationId
+            this.versionName = versionName
+            this.versionCode = versionCode
         }
 
         private fun getAvailableInternalMemory(): Long {
@@ -267,6 +271,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
             }
         }
     }
+
     override fun onHandleIntent(intent: Intent?) {
         val receiver: ResultReceiver? = intent!!.getParcelableExtra("receiver")
         val bundle = Bundle()
@@ -275,7 +280,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
                 INTENT_EXTRA_CATEGORY
             ))
         try {
-            Log.e(TAG, "send on api service")
+            e(TAG, "send on api service")
             val request = createRequest(
                 this@ApiService,
                 intent.getStringExtra("url"),
@@ -318,7 +323,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
                             receiver!!.send(REQUEST_ERROR, bundle)
                         }
                     } catch (e: Exception) {
-                        Log.e(TAG, e.message!!)
+                        e(TAG, e.message!!)
                         e.printStackTrace()
                         bundle.apply {
                             putString(
