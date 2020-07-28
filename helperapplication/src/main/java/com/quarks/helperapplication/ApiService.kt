@@ -37,9 +37,10 @@ class ApiService : IntentService(ApiService::class.java.name) {
         const val INTENT_EXTRA_FILE = "fileByteArray"
         const val REQUEST_ERROR = 0
         const val REQUEST_SUCCESS = 1
-        private val JSON: MediaType? = "application/json; charset=utf-8".toMediaTypeOrNull()
-        private val PDF: MediaType? = "application/pdf".toMediaTypeOrNull()
-        private val IMAGE: MediaType? = "image".toMediaTypeOrNull()
+        private val JSON = "application/json; charset=utf-8".toMediaTypeOrNull()
+        private val PDF = "application/pdf".toMediaTypeOrNull()
+        private val IMAGE = "image".toMediaTypeOrNull()
+        private val TAG = "ApiService"
 
         /**
          * Create request with the route and the json object to send
@@ -66,7 +67,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
             if (SharedPreferences.hasWorkspace(context)) {
                 val url = SharedPreferences.getWorkspaceUrl(context) + route
                 requestBuilder.url(url)
-                Log.i("QKS request body url", "$url > $requestBody")
+                Log.i(TAG, "$url > $requestBody")
             }
             if (SharedPreferences.hasToken(context)) {
                 val token = SharedPreferences.getToken(context)
@@ -79,7 +80,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
                     JSONObject("{}")
                 }
                 body.put("context", createContextData(context))
-                Log.i("QKS body api", body.toString())
+                Log.i(TAG, body.toString())
                 if (fileToSend != null) {
                     requestBuilder = getBuilderForSendFile(
                         requestBuilder,
@@ -93,7 +94,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                Log.i("Api Service error", "create Request")
+                Log.i(TAG, "create Request")
             }
             return requestBuilder.build()
         }
@@ -181,7 +182,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
 
             } catch (e: Exception) {
                 e.printStackTrace()
-                Log.i("Api Service error", "create context data")
+                Log.i(TAG, "create context data")
             }
             return contextData
         }
@@ -272,7 +273,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
                 INTENT_EXTRA_CATEGORY
             ))
         try {
-            Log.i("com.quarks.helperapplication.ApiService", "send on api service")
+            Log.i(TAG, "send on api service")
             val request = createRequest(
                 this@ApiService,
                 intent.getStringExtra("url"),
@@ -285,7 +286,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
             val client = getCertificateOkHttpClient().build()
             client.newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
-                    Log.i("onFailure : ", e.message)
+                    Log.i(TAG, e.message)
                     bundle.apply {
                         putString(INTENT_EXTRA_CATEGORY, intent.getStringExtra(INTENT_EXTRA_CATEGORY))
                         putString(INTENT_EXTRA_FILENAME, intent.getStringExtra(INTENT_EXTRA_FILENAME))
@@ -315,7 +316,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
                             receiver!!.send(REQUEST_ERROR, bundle)
                         }
                     } catch (e: Exception) {
-                        Log.i("test", e.message!!)
+                        Log.i(TAG, e.message!!)
                         e.printStackTrace()
                         bundle.apply {
                             putString(
