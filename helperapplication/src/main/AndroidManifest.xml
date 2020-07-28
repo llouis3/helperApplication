@@ -1,5 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.quarks.helperapplication">
 
-    /
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application>
+        <service android:name=".ApiService"
+            android:enabled="true" />
+    </application>
 </manifest>
