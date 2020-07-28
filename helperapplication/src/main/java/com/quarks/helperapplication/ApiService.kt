@@ -1,3 +1,5 @@
+package com.quarks.helperapplication
+import SharedPreferences
 import android.app.IntentService
 import android.content.Context
 import android.content.Intent
@@ -19,27 +21,43 @@ import javax.net.ssl.*
 val applicationId: String? = null
 val versionCode: String? = null
 val versionName: String? = null
-const val INTENT_EXTRA_CATEGORY = "category"
-const val INTENT_EXTRA_CLASSNAME = "className"
-const val INTENT_EXTRA_FILENAME = "fileName"
 
+/**
+ * Class for call web api with json object
+ * @property INTENT_EXTRA_CATEGORY name of extra intent for category file
+ * @property INTENT_EXTRA_CLASSNAME name of extra intent for class name file
+ * @property INTENT_EXTRA_FILENAME name of extra intent for name file
+ * @property INTENT_EXTRA_FILE name of extra intent for byte array of file
+ */
 class ApiService : IntentService(ApiService::class.java.name) {
     companion object {
-        private lateinit var inputStream: InputStream
+        const val INTENT_EXTRA_CATEGORY = "category"
+        const val INTENT_EXTRA_CLASSNAME = "className"
+        const val INTENT_EXTRA_FILENAME = "fileName"
+        const val INTENT_EXTRA_FILE = "fileByteArray"
         const val REQUEST_ERROR = 0
         const val REQUEST_SUCCESS = 1
         private val JSON: MediaType? = "application/json; charset=utf-8".toMediaTypeOrNull()
         private val PDF: MediaType? = "application/pdf".toMediaTypeOrNull()
         private val IMAGE: MediaType? = "image".toMediaTypeOrNull()
 
-        fun setInputStream(inputStream: InputStream) {
-            this.inputStream = inputStream
-        }
-
+        /**
+         * Create request with the route and the json object to send
+         *
+         *@param context use context for SharedPreference
+         * @param requestBody json object to send
+         * @param fileToSend byte array of file
+         * @param fileName filename to send, null if you do not want to send
+         * @param category category of file, null if you do not want to send
+         * @param className of file, null if you do not want to send
+         *
+         * @return the created request
+         */
         fun createRequest(
             context: Context,
             route: String,
             requestBody: String?,
+            fileToSend: ByteArray?,
             fileName: String?,
             category: String?,
             className: String?
@@ -62,8 +80,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
                 }
                 body.put("context", createContextData(context))
                 Log.i("QKS body api", body.toString())
-                if (fileName != null) {
-                    val fileToSend = IOUtils.toByteArray(inputStream)
+                if (fileToSend != null) {
                     requestBuilder = getBuilderForSendFile(
                         requestBuilder,
                         fileToSend,
@@ -81,6 +98,14 @@ class ApiService : IntentService(ApiService::class.java.name) {
             return requestBuilder.build()
         }
 
+        /**
+         * Create builder for send file
+         * @param requestBuilder add file to request builder
+         * @param fileToSend byteArray of file
+         * @param fileName of file
+         * @param category of file
+         * @param className of file
+         */
         private fun getBuilderForSendFile(
             requestBuilder: Request.Builder,
             fileToSend: ByteArray,
@@ -96,7 +121,7 @@ class ApiService : IntentService(ApiService::class.java.name) {
                 requestBody.addFormDataPart(
                     "image",
                     fileName,
-                    RequestBody.create(IMAGE, BitmapHelper.getByteArrayToSendFromFile(fileToSend, fileName))
+                    RequestBody.create(IMAGE, BitmapHelper.getByteArrayOfBitmap(fileToSend, fileName))
                 )
             }
             requestBody.apply {
@@ -242,13 +267,17 @@ class ApiService : IntentService(ApiService::class.java.name) {
     override fun onHandleIntent(intent: Intent?) {
         val receiver: ResultReceiver? = intent!!.getParcelableExtra("receiver")
         val bundle = Bundle()
-        bundle.putSerializable(INTENT_EXTRA_CATEGORY, intent.getSerializableExtra(INTENT_EXTRA_CATEGORY))
+        bundle.putSerializable(
+            INTENT_EXTRA_CATEGORY, intent.getSerializableExtra(
+                INTENT_EXTRA_CATEGORY
+            ))
         try {
-            Log.i("ApiService", "send on api service")
+            Log.i("com.quarks.helperapplication.ApiService", "send on api service")
             val request = createRequest(
                 this@ApiService,
                 intent.getStringExtra("url"),
                 intent.getStringExtra("requestBody"),
+                intent.getByteArrayExtra(INTENT_EXTRA_FILE),
                 intent.getStringExtra(INTENT_EXTRA_FILENAME),
                 intent.getStringExtra(INTENT_EXTRA_CATEGORY),
                 intent.getStringExtra(INTENT_EXTRA_CLASSNAME)
@@ -274,8 +303,14 @@ class ApiService : IntentService(ApiService::class.java.name) {
                             val jsonResponse = JSONObject(response.body!!.string())
                             bundle.apply {
                                 putString("message", jsonResponse.getString("message"))
-                                putString(INTENT_EXTRA_FILENAME, intent.getStringExtra(INTENT_EXTRA_FILENAME))
-                                putString(INTENT_EXTRA_CATEGORY, intent.getStringExtra(INTENT_EXTRA_CATEGORY))
+                                putString(
+                                    INTENT_EXTRA_FILENAME, intent.getStringExtra(
+                                        INTENT_EXTRA_FILENAME
+                                    ))
+                                putString(
+                                    INTENT_EXTRA_CATEGORY, intent.getStringExtra(
+                                        INTENT_EXTRA_CATEGORY
+                                    ))
                             }
                             receiver!!.send(REQUEST_ERROR, bundle)
                         }
@@ -283,8 +318,14 @@ class ApiService : IntentService(ApiService::class.java.name) {
                         Log.i("test", e.message!!)
                         e.printStackTrace()
                         bundle.apply {
-                            putString(INTENT_EXTRA_FILENAME, intent.getStringExtra(INTENT_EXTRA_FILENAME))
-                            putString(INTENT_EXTRA_CATEGORY, intent.getStringExtra(INTENT_EXTRA_CATEGORY))
+                            putString(
+                                INTENT_EXTRA_FILENAME, intent.getStringExtra(
+                                    INTENT_EXTRA_FILENAME
+                                ))
+                            putString(
+                                INTENT_EXTRA_CATEGORY, intent.getStringExtra(
+                                    INTENT_EXTRA_CATEGORY
+                                ))
                         }
                         receiver!!.send(REQUEST_ERROR, bundle)
                     }

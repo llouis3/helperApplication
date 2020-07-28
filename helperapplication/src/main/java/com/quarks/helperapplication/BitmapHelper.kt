@@ -1,12 +1,9 @@
+package com.quarks.helperapplication
+
 import android.graphics.*
 import android.media.ExifInterface
-import android.net.Uri
-import android.util.Log
-import org.apache.commons.io.IOUtils
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.InputStream
 
 class BitmapHelper {
     companion object {
@@ -66,7 +63,7 @@ class BitmapHelper {
             return overlay
         }
 
-        fun getByteArrayToSendFromFile(byteArray: ByteArray, fileName: String): ByteArray {
+        fun getByteArrayOfBitmap(byteArray: ByteArray, fileName: String): ByteArray {
             val byteFile = ByteArrayOutputStream()
 
             val bitmap = getBitmap(getBaosFromByteArray(byteArray), BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size))
